@@ -74,6 +74,23 @@ class Ingredient(object):
         """
         if function in self.captured_functions:
             return function
+
+        if inspect.isclass(function):
+            captured_methods = {}
+            for base_class in reversed(inspect.getmro(function)):
+                if type(base_class) is not object:
+                    for method_str, method in base_class.__dict__.items():
+                        if inspect.isfunction(method):
+                            captured_method = create_captured_function(method,
+                                prefix=prefix)
+                            captured_methods[method_str] = captured_method
+
+            for method_str, method in captured_methods.items():
+                setattr(function, method_str, method)
+                self.captured_functions.append(method)
+            return function
+
+
         captured_function = create_captured_function(function, prefix=prefix)
         self.captured_functions.append(captured_function)
         return captured_function
